@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление автомобилями</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+<h1>Управление автомобилями</h1>
+<form id="carForm">
+    <input type="hidden" id="carId" />
+    <label for="brand">Марка:</label>
+    <input type="text" id="brand" required />
+    <label for="model">Модель:</label>
+    <input type="text" id="model" required />
+    <label for="mileage">Пробег:</label>
+    <input type="number" id="mileage" required />
+    <label for="ownerCount">Количество владельцев:</label>
+    <input type="number" id="ownerCount" required />
+    <button type="submit">Добавить/Обновить машину</button>
+</form>
+
+<h2>Список автомобилей</h2>
+<table id="carsTable">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Марка</th>
+        <th>Модель</th>
+        <th>Пробег</th>
+        <th>Количество владельцев</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+</table>
+
+<script>
+    const apiUrl = 'http://localhost:8080/cars';
+
+    document.getElementById('carForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const carId = document.getElementById('carId').value;
+        const carData = {
+            brand: document.getElementById('brand').value,
+            model: document.getElementById('model').value,
+            mileage: parseFloat(document.getElementById('mileage').value),
+            owner_count: parseInt(document.getElementById('ownerCount').value)
+        };
+
+        if (carId) {
+
+            fetch(`http://localhost:8080/car/update`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ...carData, id: parseInt(carId) })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    loadCars();
+                    clearForm();
+                });
+        } else {
+
+            fetch('http://localhost:8080/car/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(carData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    loadCars();
+                    clearForm();
+                });
+        }
+    });
+
+    function loadCars() {
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('carsTable').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
+                data.forEach(car => {
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).innerText = car.id;
+                    row.insertCell(1).innerText = car.brand;
+                    row.insertCell(2).innerText = car.model;
+                    row.insertCell(3).innerText = car.mileage;
+                    row.insertCell(4).innerText = car.owner_count;
+                    const actionsCell = row.insertCell(5);
+                    actionsCell.innerHTML = `<button onclick="editCar(${car.id})">Редактировать</button>
+                                                 <button onclick="deleteCar(${car.id})">Удалить</button>`;
+                });
+            });
+    }
+
+    function editCar(id) {
+        fetch(`${apiUrl}?id=${id}`)
+            .then(response => response.json())
+            .then(car => {
+                document.getElementById('carId').value = car.id;
+                document.getElementById('brand').value = car.brand;
+                document.getElementById('model').value = car.model;
+                document.getElementById('mileage').value = car.mileage;
+                document.getElementById('ownerCount').value = car.owner_count;
+            });
+    }
+
+    function deleteCar(id) {
+        fetch (`http://localhost:8080/car/delete?id=${id}`, {
+            method: 'DELETE'
+        })
+            .then(response => {
+                if (response.ok) {
+                    loadCars();
+                } else {
+                    alert('Ошибка при удалении машины');
+                }
+            });
+    }
+
+    function clearForm() {
+        document.getElementById('carId').value = '';
+        document.getElementById('brand').value = '';
+        document.getElementById('model').value = '';
+        document.getElementById('mileage').value = '';
+        document.getElementById('ownerCount').value = '';
+    }
+
+    
+    window.onload = loadCars;
+</script>
+</body>
+</html>
