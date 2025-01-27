@@ -145,7 +145,7 @@ func main() {
 	http.HandleFunc("/car/create", createCar)
 	http.HandleFunc("/car/update", updateCar)
 	http.HandleFunc("/car/delete", deleteCar)
-	http.Handle("/", http.FileServer(http.Dir("./"))) // Обслуживание статических файлов
+	http.Handle("/", http.FileServer(http.Dir("./"))) 
 	log.Println("Сервер запущен на http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
